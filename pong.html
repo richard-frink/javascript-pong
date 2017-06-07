@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Pong!</title>
+</head>
+<body>
+<canvas id="gameCanvas" width="1440" height="2560"></canvas>
+
+<script type="text/javascript">
+//Variables
+var canvas;
+var canvasContext;
+var ballDimensions;//(.015625)*canvas.height;
+var ballX;//(.5)*canvas.width;
+var ballY;//(.12109)*canvas.height;
+var ballSpeedX;//(.015625)*canvas.width;
+var ballSpeedY;//(.015625)*canvas.height;
+var scoreP1;//0;
+var scoreCPU;//0;
+var cpuPaddleX;//canvas.width(3/8);
+var cpuPaddleY;//0;
+var p1PaddleX;//canvas.width(3/8);
+var p1PaddleY;//canvas.height(34/35);
+
+//Calulates the position of the mouse pointer
+function calculateMousePos(evt) {
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY - rect.top - root.scrollTop;
+	return{
+		x:mouseX,
+		y:mouseY
+	}
+}
+
+//On load function
+window.onload = function() {
+	//Initialize the canvas
+	canvas = document.getElementById('gameCanvas');
+	canvasContext = canvas.getContext('2d');
+	canvasContext.font = "800% Verdana";
+	console.log("Loaded game canvas.");
+
+	//Initialize the values for the game, this keeps the game responsive to the resolution of the device being used
+	ballDimensions = (.015625)*canvas.height;
+	ballX = (.5)*canvas.width;
+	ballY = (.12109)*canvas.height;
+	ballSpeedX = (.015625)*canvas.width;
+	ballSpeedY = (.015625)*canvas.height;
+	scoreP1 = 0;
+	scoreCPU = 0;
+	cpuPaddleX = canvas.width*(3/8);
+	cpuPaddleY = 0;
+	p1PaddleX = canvas.width*(3/8);
+	p1PaddleY = canvas.height*(34/35);
+
+	var fps = 30;
+	setInterval(
+		function(){
+			drawBoard();
+			moveEverything();
+		},1000/fps);
+
+	//Picks up mouse movement
+	canvas.addEventListener('mousemove',
+		function(evt) {
+			var mousePos = calculateMousePos(evt);
+			p1PaddleX = mousePos.x;
+		});
+}
+
+//Draws rectangles
+function colorRect(leftX, topY, width, height, drawColor){
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX, topY, width, height);
+}
+
+//Draws the board elements, i.e. paddles, net, score
+function drawBoard() {
+	//Board
+	colorRect(0,0,canvas.width,canvas.height, 'black');
+	
+	//CPU paddle
+	colorRect(cpuPaddleX,cpuPaddleY,canvas.width/4,canvas.height/35, 'white');
+	
+	//Player paddle
+	colorRect(p1PaddleX - canvas.width*(1/8),p1PaddleY,canvas.width/4,canvas.height/35, 'white');
+	
+	//Ball
+	canvasContext.fillStyle = 'white';
+	canvasContext.beginPath();
+	canvasContext.arc(ballX,ballY,ballDimensions,0,Math.PI*2,true);
+	canvasContext.fill();
+
+	//Scores
+	canvasContext.fillText(scoreP1,canvas.width/2,canvas.height*(3/4));
+	canvasContext.fillText(scoreCPU,canvas.width/2,canvas.height*(1/4));
+
+	//Net
+	for(var i = 0; i < canvas.width; i+= canvas.width/12) {
+		colorRect(i, canvas.height*(63/128), canvas.width/24, canvas.height*(1/64), 'white');
+	}
+}
+
+//Ai gameplay
+function computerMovement() {
+	if(cpuPaddleX + canvas.width*(1/8) < ballX) {
+		cpuPaddleX += Math.abs(ballSpeedX)/2;
+	}
+	else if(cpuPaddleX + canvas.width*(1/8) > ballX) {
+		cpuPaddleX -= Math.abs(ballSpeedX)/2;
+	}
+}
+
+//Handles the frame by frame gameplay of the ball and paddle movements
+function moveEverything() {
+	ballY = ballY + ballSpeedY;
+	ballX = ballX + ballSpeedX;
+	computerMovement();
+
+	if (ballY > canvas.height){
+		ballReset(false);
+	}
+	if (ballY < 0) {
+		ballReset(true);
+	}
+	if (ballX >= canvas.width || ballX <= 0) {
+		ballSpeedX = -ballSpeedX;
+	}
+	if(ballY >= canvas.height*(34/35) && (ballX <= (p1PaddleX + canvas.width*(1/8)) && ballX >= (p1PaddleX - canvas.width*(1/8)))) {
+		var difference = Math.abs(ballX - p1PaddleX);
+		var factor = (canvas.width/8 - difference)/(canvas.width/8);
+		ballSpeedY = ballSpeedY*(Math.abs(factor) + .7)
+		ballSpeedY = -ballSpeedY;
+	}
+	if(ballY <= canvas.height/35 && (ballX <= (cpuPaddleX + canvas.width*(1/4)) && ballX >= cpuPaddleX)) {
+		var difference = Math.abs(ballX - (cpuPaddleX + canvas.width/8));
+		var factor = (canvas.width/8 - difference)/(canvas.width/8);
+		ballSpeedY = ballSpeedY*(Math.abs(factor) + .7)
+		ballSpeedY = -ballSpeedY;
+	}
+}
+
+//Reset the ball position to the middle
+function ballReset(p1) {
+	if(p1){
+		ballY = canvas.height*(3/4);
+		ballX = canvas.width/2;
+		ballSpeedY = (-.015625)*canvas.height;
+		scoreP1++;
+		cpuPaddleX = canvas.width*(3/8);
+	}
+	else{
+		ballY = canvas.height*(1/4);
+		ballX = canvas.width/2;
+		ballSpeedY = (.015625)*canvas.height;
+		scoreCPU++;
+		cpuPaddleX = canvas.width*(3/8);
+	}
+}
+
+</script>
+
+</body>
+</html>>
